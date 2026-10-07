@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rapport Concierge</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    :root {
+      --bg: #0f1923; --bg2: #1a2535; --bg3: #1e2d42;
+      --accent: #00d4ff; --accent2: #0099cc;
+      --green: #2ed573; --orange: #ffa502; --red: #ff4757;
+      --purple: #a29bfe; --gold: #ffd700;
+      --text: #e0e0e0; --muted: #7f8c9a; --nav-h: 65px;
+    }
+    body { font-family:'Segoe UI',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding-bottom:var(--nav-h); }
+
+    /* HEADER */
+    .header { background:var(--bg2); padding:14px 16px 12px; border-bottom:1px solid rgba(0,212,255,0.15); position:sticky; top:0; z-index:100; display:flex; align-items:center; justify-content:space-between; }
+    .header-logo { display:flex; align-items:center; gap:10px; }
+    .header-logo-icon { font-size:1.6em; }
+    .header-logo-title { font-size:1.05em; font-weight:800; color:var(--accent); letter-spacing:0.5px; }
+    .header-logo-sub { font-size:0.72em; color:var(--muted); margin-top:1px; }
+    .header-right { display:flex; align-items:center; gap:8px; }
+    .settings-btn { background:rgba(255,255,255,0.08); border:none; color:var(--text); width:36px; height:36px; border-radius:10px; cursor:pointer; font-size:1.1em; transition:background 0.2s; }
+    .settings-btn:hover { background:rgba(255,255,255,0.15); }
+    .date-badge { background:rgba(0,212,255,0.12); border:1px solid rgba(0,212,255,0.3); color:var(--accent); padding:5px 12px; border-radius:20px; font-size:0.8em; font-weight:700; }
+
+    /* PAGES */
+    .page { display:none; padding:16px; animation:fadeIn 0.25s ease; }
+    .page.active { display:block; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+    /* BOTTOM NAV */
+    .bottom-nav { position:fixed; bottom:0; left:0; right:0; height:var(--nav-h); background:var(--bg2); border-top:1px solid rgba(255,255,255,0.08); display:flex; z-index:200; }
+    .nav-item { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; cursor:pointer; border:none; background:transparent; color:var(--muted); font-size:0.72em; font-weight:600; transition:color 0.2s; padding:8px 0; }
+    .nav-item .nav-icon { font-size:1.5em; }
+    .nav-item.active { color:var(--accent); }
+    .nav-item.active .nav-icon { filter:drop-shadow(0 0 6px rgba(0,212,255,0.6)); }
+
+    /* CARDS */
+    .card { background:var(--bg2); border-radius:14px; padding:16px; margin-bottom:14px; border:1px solid rgba(255,255,255,0.07); }
+    .card-title { font-size:0.85em; color:var(--accent); font-weight:700; margin-bottom:12px; display:flex; align-items:center; gap:6px; }
+
+    /* ACCUEIL */
+    .welcome-banner { background:linear-gradient(135deg,rgba(0,212,255,0.12),rgba(0,153,204,0.06)); border:1px solid rgba(0,212,255,0.25); border-radius:14px; padding:18px 16px; margin-bottom:16px; text-align:center; }
+    .welcome-banner-icon { font-size:2.5em; margin-bottom:8px; }
+    .welcome-banner-title { font-size:1.15em; font-weight:800; color:var(--accent); margin-bottom:4px; }
+    .welcome-banner-sub { font-size:0.82em; color:var(--muted); }
+    .concierge-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+    .concierge-btn { background:var(--bg2); border:2px solid rgba(255,255,255,0.1); border-radius:14px; padding:20px 12px; cursor:pointer; text-align:center; transition:all 0.25s; color:var(--text); }
+    .concierge-btn:hover { border-color:var(--accent); background:rgba(0,212,255,0.08); transform:translateY(-2px); }
+    .concierge-btn.selected { border-color:var(--accent); background:rgba(0,212,255,0.12); box-shadow:0 0 20px rgba(0,212,255,0.2); }
+    .concierge-btn-icon { font-size:2em; margin-bottom:8px; }
+    .concierge-btn-name { font-size:1em; font-weight:700; }
+    .concierge-btn-role { font-size:0.75em; color:var(--muted); margin-top:3px; }
+    .section-title { font-size:1em; font-weight:700; color:var(--text); margin-bottom:10px; margin-top:4px; }
+
+    /* FORMULAIRE */
+    .form-group { margin-bottom:14px; }
+    .form-label { font-size:0.82em; color:var(--muted); margin-bottom:6px; display:block; font-weight:600; }
+    .form-input { width:100%; padding:11px 14px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.15); border-radius:10px; color:var(--text); font-size:0.95em; }
+    .form-input:focus { outline:none; border-color:var(--accent); }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+    /* BOUTONS */
+    .btn-primary { width:100%; padding:14px; border-radius:12px; border:none; background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; font-weight:700; font-size:1em; cursor:pointer; transition:all 0.2s; letter-spacing:0.3px; }
+    .btn-primary:hover { opacity:0.88; transform:translateY(-1px); }
+    .btn-primary:disabled { background:#2a3444; color:var(--muted); cursor:not-allowed; transform:none; }
+    .btn-secondary { width:100%; padding:12px; border-radius:12px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:var(--text); font-weight:600; font-size:0.95em; cursor:pointer; transition:all 0.2s; }
+    .btn-secondary:hover { background:rgba(255,255,255,0.12); }
+    .btn-green { width:100%; padding:14px; border-radius:12px; border:none; background:linear-gradient(135deg,#27ae60,#2ed573); color:#fff; font-weight:700; font-size:1em; cursor:pointer; transition:all 0.2s; }
+    .btn-green:hover { opacity:0.88; transform:translateY(-1px); }
+    .btn-danger { width:100%; padding:12px; border-radius:12px; border:none; background:rgba(255,71,87,0.15); border:1px solid var(--red); color:var(--red); font-weight:700; font-size:0.95em; cursor:pointer; }
+    .btn-orange { padding:9px 16px; border-radius:10px; border:none; background:rgba(255,165,2,0.15); border:1px solid var(--orange); color:var(--orange); font-weight:700; font-size:0.85em; cursor:pointer; transition:all 0.2s; }
+    .btn-orange:hover { background:rgba(255,165,2,0.25); }
+
+    /* PHOTO */
+    .photo-zone { border:2px dashed rgba(255,255,255,0.15); border-radius:12px; padding:20px; text-align:center; cursor:pointer; transition:all 0.2s; position:relative; overflow:hidden; }
+    .photo-zone:hover { border-color:var(--accent); background:rgba(0,212,255,0.04); }
+    .photo-zone.has-photo { border-color:var(--green); border-style:solid; padding:8px; }
+    .photo-zone input[type="file"] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+    .photo-zone-icon { font-size:2em; margin-bottom:6px; }
+    .photo-zone-label { font-size:0.82em; color:var(--muted); }
+    .photo-zone-time { font-size:0.9em; font-weight:700; color:var(--green); margin-top:6px; }
+    .photo-preview { width:100%; border-radius:8px; max-height:140px; object-fit:cover; display:none; }
+    .photo-preview.show { display:block; }
+
+    /* AI */
+    .ai-suggestion { background:linear-gradient(135deg,rgba(162,155,254,0.12),rgba(124,58,237,0.08)); border:1px solid rgba(162,155,254,0.35); border-radius:12px; padding:14px; margin-bottom:14px; display:none; }
+    .ai-suggestion.show { display:block; }
+    .ai-suggestion-label { font-size:0.75em; color:var(--purple); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+    .ai-suggestion-text { font-size:0.95em; font-weight:700; color:var(--text); margin-bottom:10px; }
+    .ai-suggestion-btns { display:flex; gap:8px; }
+    .ai-confirm-btn { flex:1; padding:9px; border-radius:9px; border:none; background:rgba(46,213,115,0.15); border:1px solid var(--green); color:var(--green); font-weight:700; font-size:0.85em; cursor:pointer; }
+    .ai-modify-btn { flex:1; padding:9px; border-radius:9px; border:none; background:rgba(255,165,2,0.12); border:1px solid var(--orange); color:var(--orange); font-weight:700; font-size:0.85em; cursor:pointer; }
+
+    /* PRESTATIONS */
+    .prestations-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+    .prestations-count { background:rgba(0,212,255,0.12); border:1px solid rgba(0,212,255,0.3); color:var(--accent); padding:4px 12px; border-radius:20px; font-size:0.8em; font-weight:700; }
+    .prestation-card { background:rgba(0,0,0,0.25); border-radius:12px; padding:14px; margin-bottom:10px; border:1px solid rgba(255,255,255,0.07); border-left:3px solid var(--accent); }
+    .prestation-card.en-cours { border-left-color:var(--orange); }
+    .prestation-card.terminee { border-left-color:var(--green); }
+    .prestation-top { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:8px; }
+    .prestation-nature { font-weight:700; font-size:0.95em; flex:1; }
+    .prestation-status { font-size:0.72em; font-weight:700; padding:3px 10px; border-radius:20px; white-space:nowrap; margin-left:8px; }
+    .prestation-status.en-cours { background:rgba(255,165,2,0.15); color:var(--orange); border:1px solid var(--orange); }
+    .prestation-status.terminee { background:rgba(46,213,115,0.15); color:var(--green); border:1px solid var(--green); }
+    .prestation-meta { display:flex; gap:12px; flex-wrap:wrap; font-size:0.78em; color:var(--muted); margin-bottom:8px; }
+    .prestation-meta span { display:flex; align-items:center; gap:4px; }
+    .prestation-temps { font-size:0.88em; font-weight:700; color:var(--gold); }
+    .prestation-actions { display:flex; gap:8px; margin-top:10px; }
+    .prestation-photos { display:flex; gap:8px; margin-top:8px; }
+    .prestation-thumb { width:52px; height:52px; border-radius:8px; object-fit:cover; border:1px solid rgba(255,255,255,0.1); cursor:pointer; }
+
+    /* TOTAL */
+    .total-card { background:linear-gradient(135deg,rgba(255,215,0,0.1),rgba(255,165,2,0.06)); border:1px solid rgba(255,215,0,0.3); border-radius:14px; padding:16px; margin-bottom:14px; }
+    .total-row { display:flex; justify-content:space-between; align-items:center; }
+    .total-label { font-size:0.85em; color:var(--muted); }
+    .total-val { font-size:1.4em; font-weight:800; color:var(--gold); }
+    .total-sub { font-size:0.78em; color:var(--muted); margin-top:4px; }
+
+    /* EXPORT PAGE */
+    .export-preview { background:rgba(0,0,0,0.25); border-radius:12px; padding:14px; margin-bottom:14px; overflow-x:auto; }
+    .export-table { width:100%; border-collapse:collapse; font-size:0.78em; min-width:500px; }
+    .export-table th { background:rgba(0,212,255,0.12); color:var(--accent); padding:8px 10px; text-align:left; font-weight:700; border-bottom:1px solid rgba(0,212,255,0.2); white-space:nowrap; }
+    .export-table td { padding:8px 10px; border-bottom:1px solid rgba(255,255,255,0.05); color:var(--text); vertical-align:middle; }
+    .export-table tr:last-child td { border-bottom:none; }
+    .export-table tr:hover td { background:rgba(255,255,255,0.03); }
+
+    /* MODAL */
+    .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:500; padding:16px; align-items:flex-end; }
+    .modal.active { display:flex; }
+    .modal-sheet { background:var(--bg3); border-radius:20px 20px 0 0; width:100%; max-height:92vh; overflow-y:auto; padding:20px 18px 30px; animation:slideUp 0.3s ease; }
+    @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+    .modal-handle { width:40px; height:4px; background:rgba(255,255,255,0.2); border-radius:2px; margin:0 auto 18px; }
+    .modal-title { font-size:1.15em; font-weight:700; margin-bottom:18px; color:var(--accent); }
+    .modal-close { width:100%; padding:12px; background:none; border:none; color:var(--muted); cursor:pointer; margin-top:10px; font-size:0.9em; }
+
+    /* SETTINGS */
+    .settings-row { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.06); }
+    .settings-row:last-child { border-bottom:none; }
+    .settings-row-label { font-size:0.88em; }
+    .settings-row-sub { font-size:0.75em; color:var(--muted); margin-top:2px; }
+
+    /* LOADING */
+    #loadingOverlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.88); z-index:999; flex-direction:column; align-items:center; justify-content:center; }
+    #loadingOverlay.active { display:flex; }
+    .spinner { width:44px; height:44px; border:4px solid rgba(0,212,255,0.15); border-top-color:var(--accent); border-radius:50%; animation:spin 0.9s linear infinite; }
+    @keyframes spin { to{transform:rotate(360deg)} }
+    .loading-txt { color:var(--accent); margin-top:14px; font-size:0.95em; }
+
+    /* TOAST */
+    .toast { position:fixed; bottom:calc(var(--nav-h) + 12px); left:50%; transform:translateX(-50%) translateY(20px); background:#1e3a2e; border:1px solid var(--green); color:var(--green); padding:10px 22px; border-radius:30px; font-size:0.88em; font-weight:600; z-index:999; opacity:0; transition:all 0.3s; white-space:nowrap; }
+    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+    .toast.error { background:#3a1e1e; border-color:var(--red); color:var(--red); }
+    .toast.gold  { background:#2a1e00; border-color:var(--gold); color:var(--gold); }
+    .toast.info  { background:#1e2a3a; border-color:var(--accent); color:var(--accent); }
+
+    /* EMPTY */
+    .empty-state { text-align:center; padding:40px 20px; color:var(--muted); }
+    .empty-state-icon { font-size:3em; margin-bottom:12px; }
+    .empty-state-title { font-size:0.95em; font-weight:700; margin-bottom:6px; color:var(--text); }
+    .empty-state-sub { font-size:0.82em; line-height:1.6; }
+
+    /* CONCIERGE BAR */
+    .active-concierge-bar { background:rgba(0,212,255,0.08); border:1px solid rgba(0,212,255,0.2); border-radius:10px; padding:10px 14px; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; }
+    .active-concierge-name { font-weight:700; font-size:0.95em; }
+    .active-concierge-sub { font-size:0.75em; color:var(--muted); margin-top:2px; }
+    .change-btn { background:none; border:1px solid rgba(255,255,255,0.15); color:var(--muted); padding:5px 12px; border-radius:8px; font-size:0.78em; cursor:pointer; transition:all 0.2s; }
+    .change-btn:hover { border-color:var(--accent); color:var(--accent); }
+
+    /* LIGHTBOX */
+    .lightbox { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:600; align-items:center; justify-content:center; }
+    .lightbox.active { display:flex; }
+    .lightbox img { max-width:95vw; max-height:90vh; border-radius:12px; object-fit:contain; }
+    .lightbox-close { position:absolute; top:16px; right:16px; background:rgba(255,255,255,0.15); border:none; color:#fff; width:40px; height:40px; border-radius:50%; font-size:1.2em; cursor:pointer; }
+
+    @media (max-width:380px) { .concierge-grid{grid-template-columns:1fr} .form-row{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-logo">
+      <div class="header-logo-icon">🏢</div>
+      <div>
+        <div class="header-logo-title">Rapport Concierge</div>
+        <div class="header-logo-sub">Quartier des Kessales</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="date-badge" id="dateBadge">—</div>
+      <button class="settings-btn" onclick="openSettings()">⚙️</button>
+    </div>
+  </div>
+
+  <!-- PAGE ACCUEIL -->
+  <div class="page active" id="pageAccueil">
+    <div class="welcome-banner">
+      <div class="welcome-banner-icon">👷</div>
+      <div class="welcome-banner-title">Rapport Journalier</div>
+      <div class="welcome-banner-sub">Sélectionne ton nom pour commencer</div>
+    </div>
+    <div class="section-title">Qui es-tu aujourd'hui ?</div>
+    <div class="concierge-grid">
+      <button class="concierge-btn" id="btnNuno" onclick="selectConcierge('Nuno')">
+        <div class="concierge-btn-icon">👷</div>
+        <div class="concierge-btn-name">Nuno</div>
+        <div class="concierge-btn-role">Concierge</div>
+      </button>
+      <button class="concierge-btn" id="btnThierry" onclick="selectConcierge('Thierry')">
+        <div class="concierge-btn-icon">🔧</div>
+        <div class="concierge-btn-name">Thierry</div>
+        <div class="concierge-btn-role">Concierge</div>
+      </button>
+    </div>
+    <button class="btn-primary" id="btnStartDay" onclick="startDay()" disabled>
+      ▶ Commencer la journée
+    </button>
+  </div>
+
+  <!-- PAGE RAPPORT -->
+  <div class="page" id="pageRapport">
+    <div class="active-concierge-bar">
+      <div>
+        <div class="active-concierge-name" id="activeConciergeLabel">—</div>
+        <div class="active-concierge-sub" id="activeDateLabel">—</div>
+      </div>
+      <button class="change-btn" onclick="goPage('Accueil')">Changer</button>
+    </div>
+    <div class="prestations-header">
+      <div class="section-title" style="margin:0;">Prestations du jour</div>
+      <div class="prestations-count" id="prestationsCount">0 prestation</div>
+    </div>
+    <div id="prestationsList">
+      <div class="empty-state">
+        <div class="empty-state-icon">📋</div>
+        <div class="empty-state-title">Aucune prestation</div>
+        <div class="empty-state-sub">Clique sur le bouton ci-dessous<br>pour enregistrer ta première prestation.</div>
+      </div>
+    </div>
+    <div class="total-card" id="totalCard" style="display:none;">
+      <div class="total-row">
+        <div>
+          <div class="total-label">Temps total presté</div>
+          <div class="total-val" id="totalTemps">0h00</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="total-label">Prestations</div>
+          <div class="total-val" id="totalNb">0</div>
+        </div>
+      </div>
+      <div class="total-sub" id="totalSub">—</div>
+    </div>
+    <button class="btn-primary" onclick="openNewPrestation()" style="margin-bottom:10px;">➕ Nouvelle prestation</button>
+    <button class="btn-secondary" onclick="goPage('Export')">📊 Voir le rapport & exporter</button>
+  </div>
+
+  <!-- PAGE EXPORT -->
+  <div class="page" id="pageExport">
+    <div class="card">
+      <div class="card-title">📊 Récapitulatif du jour</div>
+      <div class="export-preview">
+        <table class="export-table" id="exportTable">
+          <thead>
+            <tr>
+              <th>Date</th><th>Intervenant</th><th>Bâtiment</th>
+              <th>Début</th><th>Fin</th><th>Temps</th><th>Nature des travaux</th>
+            </tr>
+          </thead>
+          <tbody id="exportTableBody">
+            <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px;">Aucune prestation enregistrée</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="exportExcel()" style="margin-bottom:10px;">📥 Exporter en Excel</button>
+    <button class="btn-green" onclick="exportPDFWithPhotos()" style="margin-bottom:10px;">📄 Générer rapport PDF (avec photos)</button>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" id="navAccueil" onclick="goPage('Accueil')"><span class="nav-icon">🏠</span>Accueil</button>
+    <button class="nav-item" id="navRapport" onclick="goPage('Rapport')"><span class="nav-icon">📋</span>Rapport</button>
+    <button class="nav-item" id="navExport" onclick="goPage('Export')"><span class="nav-icon">📊</span>Export</button>
+  </nav>
+
+  <!-- MODAL NOUVELLE PRESTATION -->
+  <div class="modal" id="modalPrestation">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title" id="modalPrestationTitle">➕ Nouvelle prestation</div>
+      <div class="form-group">
+        <label class="form-label">📸 Photo de début (heure extraite automatiquement)</label>
+        <div class="photo-zone" id="photoDebutZone">
+          <input type="file" id="photoDebutInput" accept="image/*" capture="environment" onchange="handlePhoto(event,'debut')">
+          <img class="photo-preview" id="photoDebutPreview" src="" alt="">
+          <div id="photoDebutPlaceholder"><div class="photo-zone-icon">📷</div><div class="photo-zone-label">Prendre ou importer une photo</div></div>
+          <div class="photo-zone-time" id="photoDebutTime"></div>
+        </div>
+      </div>
+      <div class="ai-suggestion" id="aiSuggestion">
+        <div class="ai-suggestion-label">🤖 Suggestion IA</div>
+        <div class="ai-suggestion-text" id="aiSuggestionText">Analyse en cours...</div>
+        <div class="ai-suggestion-btns">
+          <button class="ai-confirm-btn" onclick="confirmAI()">✅ Confirmer</button>
+          <button class="ai-modify-btn" onclick="modifyAI()">✏️ Modifier</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">🔧 Nature des travaux</label>
+        <input type="text" class="form-input" id="inputNature" placeholder="Ex: Remplacement serrure, tonte pelouse...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">📍 Bâtiment</label>
+        <select class="form-input" id="inputResidence"></select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">⏰ Heure début</label>
+          <input type="time" class="form-input" id="inputHeureDebut">
+        </div>
+        <div class="form-group">
+          <label class="form-label">⏰ Heure fin (optionnel)</label>
+          <input type="time" class="form-input" id="inputHeureFin">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">📸 Photo de fin (optionnel)</label>
+        <div class="photo-zone" id="photoFinZone">
+          <input type="file" id="photoFinInput" accept="image/*" capture="environment" onchange="handlePhoto(event,'fin')">
+          <img class="photo-preview" id="photoFinPreview" src="" alt="">
+          <div id="photoFinPlaceholder"><div class="photo-zone-icon">📷</div><div class="photo-zone-label">Photo de fin de prestation</div></div>
+          <div class="photo-zone-time" id="photoFinTime"></div>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="savePrestation()" style="margin-bottom:8px;">💾 Enregistrer la prestation</button>
+      <button class="modal-close" onclick="closeModal('modalPrestation')">Annuler</button>
+    </div>
+  </div>
+
+  <!-- MODAL SETTINGS -->
+  <div class="modal" id="modalSettings">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">⚙️ Paramètres</div>
+      <div class="form-group">
+        <label class="form-label">🔑 Clé API OpenRouter</label>
+        <input type="password" class="form-input" id="settingsApiKey" placeholder="sk-or-v1-...">
+        <small style="color:var(--muted);display:block;margin-top:5px;font-size:0.75em;">Obtiens ta clé sur <a href="https://openrouter.ai/keys" target="_blank" style="color:var(--accent);">openrouter.ai/keys</a></small>
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-row-label">🤖 Détection IA automatique</div><div class="settings-row-sub">Analyse la photo pour détecter le type de travail</div></div>
+        <input type="checkbox" id="settingsAI" checked style="width:20px;height:20px;accent-color:var(--accent);cursor:pointer;">
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-row-label">⏱ Extraction EXIF automatique</div><div class="settings-row-sub">Lit l'heure dans les métadonnées de la photo</div></div>
+        <input type="checkbox" id="settingsEXIF" checked style="width:20px;height:20px;accent-color:var(--accent);cursor:pointer;">
+      </div>
+      <button class="btn-primary" onclick="saveSettings()" style="margin-top:16px;">💾 Enregistrer</button>
+      <button class="btn-danger" onclick="resetAllData()" style="margin-top:10px;">🗑️ Effacer toutes les données du jour</button>
+      <button class="modal-close" onclick="closeModal('modalSettings')">Annuler</button>
+    </div>
+  </div>
+
+  <!-- MODAL ÉDITION -->
+  <div class="modal" id="modalEdit">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">✏️ Modifier la prestation</div>
+      <input type="hidden" id="editIndex">
+      <div class="form-group">
+        <label class="form-label">🔧 Nature des travaux</label>
+        <input type="text" class="form-input" id="editNature">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">⏰ Heure début</label>
+          <input type="time" class="form-input" id="editHeureDebut">
+        </div>
+        <div class="form-group">
+          <label class="form-label">⏰ Heure fin</label>
+          <input type="time" class="form-input" id="editHeureFin">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">📍 Bâtiment</label>
+        <select class="form-input" id="editResidence"></select>
+      </div>
+      <button class="btn-primary" onclick="saveEdit()" style="margin-bottom:8px;">💾 Enregistrer les modifications</button>
+      <button class="btn-danger" onclick="deletePrestation()" style="margin-bottom:8px;">🗑️ Supprimer cette prestation</button>
+      <button class="modal-close" onclick="closeModal('modalEdit')">Annuler</button>
+    </div>
+  </div>
+
+  <!-- LIGHTBOX -->
+  <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+    <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+    <img id="lightboxImg" src="" alt="">
+  </div>
+
+  <!-- LOADING -->
+  <div id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-txt" id="loadingTxt">Analyse en cours...</div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"><\/script>
+
+  <script>
+  // ===== RÉSIDENCES =====
+  const RESIDENCES = [
+    'QK - Alexandrite 27','QK - Alexandrite 29','QK - Béryl 21','QK - Béryl 23',
+    'QK - Corail B2','QK - Corail B3','QK - Corail B4','QK - Corail B5',
+    'QK - Corail B6','QK - Corail B7','QK - Corail B8','QK - Corail B9',
+    'QK - Olivine','QK - Onyx','QK - Parking 1 & 2','QK - Rubis 111',
+    'QK - Rubis 113','QK - Tourmaline'
+  ];
+
+  // ===== ÉTAT =====
+  let APP = {
+    apiKey:'', aiEnabled:true, exifEnabled:true,
+    concierge:'', dateJour:'', prestations:[],
+    form:{ photoDebutBase64:null, photoFinBase64:null, heureDebut:'', heureFin:'', nature:'', aiSuggestion:'', editIndex:null }
+  };
+
+  function today() { return new Date().toISOString().split('T')[0]; }
+  function getCurrentTime() { const n=new Date(); return String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0'); }
+
+  function calcDuree(debut, fin) {
+    if (!debut||!fin) return null;
+    const [dh,dm]=debut.split(':').map(Number);
+    const [fh,fm]=fin.split(':').map(Number);
+    const totalMin=(fh*60+fm)-(dh*60+dm);
+    if (totalMin<0) return null;
+    const h=Math.floor(totalMin/60), m=totalMin%60;
+    return { h, m, totalMin, label: totalMin===0?'0min':(h>0?h+'h'+String(m).padStart(2,'0'):m+'min') };
+  }
+
+  function calcTotalJour() {
+    let total=0;
+    APP.prestations.forEach(p=>{ if(p.heureDebut&&p.heureFin){const d=calcDuree(p.heureDebut,p.heureFin);if(d)total+=d.totalMin;} });
+    const h=Math.floor(total/60), m=total%60;
+    return { totalMin:total, label:h+'h'+String(m).padStart(2,'0') };
+  }
+
+  function save() {
+    try {
+      const toSave={...APP,prestations:APP.prestations.map(p=>({...p,photoDebutBase64:null,photoFinBase64:null}))};
+      localStorage.setItem('concierge_app',JSON.stringify(toSave));
+    } catch(e){}
+  }
+
+  function load() {
+    try {
+      const d=localStorage.getItem('concierge_app');
+      if(d){
+        const parsed=JSON.parse(d);
+        if(parsed.dateJour&&parsed.dateJour!==today()){parsed.prestations=[];parsed.dateJour=today();}
+        APP={...APP,...parsed};
+      }
+    } catch(e){}
+  }
+
+  function showToast(msg,type='ok') {
+    const t=document.getElementById('toast');
+    t.textContent=msg;
+    t.className='toast show'+(type==='err'?' error':type==='gold'?' gold':type==='info'?' info':'');
+    setTimeout(()=>t.classList.remove('show'),3000);
+  }
+  function showLoading(txt='Analyse en cours...') { document.getElementById('loadingTxt').textContent=txt; document.getElementById('loadingOverlay').classList.add('active'); }
+  function hideLoading() { document.getElementById('loadingOverlay').classList.remove('active'); }
+
+  // ===== NAVIGATION =====
+  function goPage(name) {
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    document.getElementById('page'+name).classList.add('active');
+    document.getElementById('nav'+name).classList.add('active');
+    if(name==='Rapport') renderPrestations();
+    if(name==='Export')  renderExportTable();
+  }
+  function openModal(id) { document.getElementById(id).classList.add('active'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+  // ===== ACCUEIL =====
+  function selectConcierge(nom) {
+    APP.concierge=nom;
+    document.getElementById('btnNuno').classList.toggle('selected',nom==='Nuno');
+    document.getElementById('btnThierry').classList.toggle('selected',nom==='Thierry');
+    document.getElementById('btnStartDay').disabled=!nom;
+  }
+
+  function startDay() {
+    if(!APP.concierge){showToast('❌ Sélectionne ton nom','err');return;}
+    APP.dateJour=today();
+    save(); updateUI(); goPage('Rapport');
+    showToast('✅ Journée démarrée — '+APP.concierge);
+  }
+
+  function updateUI() {
+    const dateLabel=new Date().toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'});
+    document.getElementById('dateBadge').textContent=dateLabel;
+    if(APP.concierge){
+      document.getElementById('activeConciergeLabel').textContent='👷 '+APP.concierge;
+      document.getElementById('activeDateLabel').textContent='📅 '+new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+      document.getElementById('btnNuno').classList.toggle('selected',APP.concierge==='Nuno');
+      document.getElementById('btnThierry').classList.toggle('selected',APP.concierge==='Thierry');
+    }
+    document.getElementById('settingsApiKey').value=APP.apiKey||'';
+    document.getElementById('settingsAI').checked=APP.aiEnabled!==false;
+    document.getElementById('settingsEXIF').checked=APP.exifEnabled!==false;
+    populateResidenceSelects();
+  }
+
+  function populateResidenceSelects() {
+    ['inputResidence','editResidence'].forEach(id=>{
+      const sel=document.getElementById(id);
+      if(!sel) return;
+      const current=sel.value;
+      sel.innerHTML='<option value="">— Choisir un bâtiment —</option>';
+      RESIDENCES.forEach(r=>{
+        const opt=document.createElement('option');
+        opt.value=r; opt.textContent=r;
+        if(r===current) opt.selected=true;
+        sel.appendChild(opt);
+      });
+    });
+  }
+
+  // ===== SETTINGS =====
+  function openSettings() {
+    document.getElementById('settingsApiKey').value=APP.apiKey||'';
+    document.getElementById('settingsAI').checked=APP.aiEnabled!==false;
+    document.getElementById('settingsEXIF').checked=APP.exifEnabled!==false;
+    openModal('modalSettings');
+  }
+  function saveSettings() {
+    APP.apiKey=document.getElementById('settingsApiKey').value.trim();
+    APP.aiEnabled=document.getElementById('settingsAI').checked;
+    APP.exifEnabled=document.getElementById('settingsEXIF').checked;
+    save(); closeModal('modalSettings'); showToast('⚙️ Paramètres enregistrés');
+  }
+  function resetAllData() {
+    if(!confirm('⚠️ Effacer toutes les prestations du jour ?')) return;
+    APP.prestations=[]; save(); closeModal('modalSettings'); renderPrestations(); showToast('🗑️ Données effacées','info');
+  }
+
+  // ===== EXIF =====
+  function extractEXIFDate(file) {
+    return new Promise(resolve=>{
+      if(!APP.exifEnabled){resolve(null);return;}
+      const reader=new FileReader();
+      reader.onload=function(e){
+        try{
+          const arr=new Uint8Array(e.target.result);
+          const str=String.fromCharCode(...arr.slice(0,65536));
+          const match=str.match(/(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})/);
+          if(match) resolve(match[4]+':'+match[5]); else resolve(null);
+        }catch(err){resolve(null);}
+      };
+      reader.onerror=()=>resolve(null);
+      reader.readAsArrayBuffer(file.slice(0,65536));
+    });
+  }
+
+  // ===== PHOTOS =====
+  async function handlePhoto(event,type) {
+    const file=event.target.files[0];
+    if(!file||!file.type.startsWith('image/')){showToast('❌ Fichier image requis','err');return;}
+    showLoading(type==='debut'?'Lecture photo de début...':'Lecture photo de fin...');
+    try{
+      const exifTime=await extractEXIFDate(file);
+      const heure=exifTime||getCurrentTime();
+      const source=exifTime?'📷 EXIF':'🕐 Heure actuelle';
+      const base64=await resizeAndConvert(file,800);
+      if(type==='debut'){
+        APP.form.photoDebutBase64=base64; APP.form.heureDebut=heure;
+        const prev=document.getElementById('photoDebutPreview');
+        prev.src=base64; prev.classList.add('show');
+        document.getElementById('photoDebutPlaceholder').style.display='none';
+        document.getElementById('photoDebutTime').textContent=source+' — '+heure;
+        document.getElementById('photoDebutZone').classList.add('has-photo');
+        document.getElementById('inputHeureDebut').value=heure;
+        hideLoading();
+        if(APP.aiEnabled&&APP.apiKey) analyzePhotoWithAI(base64);
+      } else {
+        APP.form.photoFinBase64=base64; APP.form.heureFin=heure;
+        const prev=document.getElementById('photoFinPreview');
+        prev.src=base64; prev.classList.add('show');
+        document.getElementById('photoFinPlaceholder').style.display='none';
+        document.getElementById('photoFinTime').textContent=source+' — '+heure;
+        document.getElementById('photoFinZone').classList.add('has-photo');
+        document.getElementById('inputHeureFin').value=heure;
+        hideLoading(); showToast('✅ Photo de fin — '+heure);
+      }
+    }catch(err){hideLoading();showToast('❌ Erreur lecture photo','err');}
+  }
+
+  function resizeAndConvert(file,maxWidth) {
+    return new Promise((resolve,reject)=>{
+      const reader=new FileReader();
+      reader.onload=function(e){
+        const img=new Image();
+        img.onload=function(){
+          const canvas=document.createElement('canvas');
+          let w=img.width,h=img.height;
+          if(w>maxWidth){h=Math.round(h*maxWidth/w);w=maxWidth;}
+          canvas.width=w; canvas.height=h;
+          canvas.getContext('2d').drawImage(img,0,0,w,h);
+          resolve(canvas.toDataURL('image/jpeg',0.75));
+        };
+        img.onerror=reject; img.src=e.target.result;
+      };
+      reader.onerror=reject; reader.readAsDataURL(file);
+    });
+  }
+
+  // ===== FORMULAIRE =====
+  function openNewPrestation() {
+    if(!APP.concierge){showToast('❌ Sélectionne d\'abord ton nom','err');goPage('Accueil');return;}
+    APP.form={photoDebutBase64:null,photoFinBase64:null,heureDebut:'',heureFin:'',nature:'',aiSuggestion:'',editIndex:null};
+    ['photoDebutPreview','photoFinPreview'].forEach(id=>{const el=document.getElementById(id);el.classList.remove('show');el.src='';});
+    ['photoDebutPlaceholder','photoFinPlaceholder'].forEach(id=>document.getElementById(id).style.display='block');
+    ['photoDebutTime','photoFinTime'].forEach(id=>document.getElementById(id).textContent='');
+    ['photoDebutZone','photoFinZone'].forEach(id=>document.getElementById(id).classList.remove('has-photo'));
+    ['photoDebutInput','photoFinInput'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('inputNature').value='';
+    document.getElementById('inputHeureDebut').value='';
+    document.getElementById('inputHeureFin').value='';
+    document.getElementById('inputResidence').value='';
+    document.getElementById('aiSuggestion').classList.remove('show');
+    document.getElementById('modalPrestationTitle').textContent='➕ Nouvelle prestation';
+    openModal('modalPrestation');
+  }
+
+  function confirmAI() { document.getElementById('inputNature').value=APP.form.aiSuggestion; document.getElementById('aiSuggestion').classList.remove('show'); showToast('✅ Nature confirmée'); }
+  function modifyAI() { document.getElementById('inputNature').value=APP.form.aiSuggestion; document.getElementById('aiSuggestion').classList.remove('show'); document.getElementById('inputNature').focus(); showToast('✏️ Modifie la nature','info'); }
+
+  function savePrestation() {
+    const nature=document.getElementById('inputNature').value.trim();
+    const residence=document.getElementById('inputResidence').value;
+    const hDebut=document.getElementById('inputHeureDebut').value;
+    const hFin=document.getElementById('inputHeureFin').value;
+    if(!nature){showToast('❌ Indique la nature des travaux','err');document.getElementById('inputNature').focus();return;}
+    if(!hDebut){showToast('❌ L\'heure de début est requise','err');return;}
+    const duree=hFin?calcDuree(hDebut,hFin):null;
+    const prestation={
+      id:Date.now(), date:APP.dateJour||today(), concierge:APP.concierge,
+      residence:residence||'', nature, heureDebut:hDebut, heureFin:hFin||'',
+      duree:duree?duree.label:'', dureeMin:duree?duree.totalMin:0,
+      statut:hFin?'terminee':'en-cours',
+      photoDebutBase64:APP.form.photoDebutBase64,
+      photoFinBase64:APP.form.photoFinBase64
+    };
+    APP.prestations.push(prestation);
+    save(); closeModal('modalPrestation'); renderPrestations();
+    showToast('✅ Prestation enregistrée — '+nature,'gold');
+  }
+
+  // ===== RENDU =====
+  function renderPrestations() {
+    const list=document.getElementById('prestationsList');
+    const count=document.getElementById('prestationsCount');
+    const total=document.getElementById('totalCard');
+    const nb=APP.prestations.length;
+    count.textContent=nb+(nb<=1?' prestation':' prestations');
+    if(nb===0){
+      list.innerHTML='<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">Aucune prestation</div><div class="empty-state-sub">Clique sur le bouton ci-dessous<br>pour enregistrer ta première prestation.</div></div>';
+      total.style.display='none'; return;
+    }
+    list.innerHTML='';
+    APP.prestations.forEach((p,i)=>{
+      const card=document.createElement('div');
+      card.className='prestation-card '+(p.statut||'en-cours');
+      const photosHtml=buildPhotosHtml(p);
+      const dureeHtml=p.statut==='terminee'
+        ?'<span class="prestation-temps">⏱ '+(p.duree||'0min')+'</span>'
+        :'<span style="color:var(--orange);font-size:0.8em;">⏳ En cours</span>';
+      card.innerHTML=
+        '<div class="prestation-top"><div class="prestation-nature">🔧 '+p.nature+'</div>'+
+        '<div class="prestation-status '+(p.statut||'en-cours')+'">'+(p.statut==='terminee'?'✅ Terminée':'🔄 En cours')+'</div></div>'+
+        '<div class="prestation-meta">'+
+        (p.residence?'<span>📍 '+p.residence+'</span>':'')+
+        '<span>🕐 '+p.heureDebut+' → '+(p.heureFin?p.heureFin:'...')+'</span></div>'+
+        dureeHtml+photosHtml+
+        '<div class="prestation-actions"><button class="btn-orange" onclick="openEdit('+i+')">✏️ Modifier</button>'+
+        (p.statut!=='terminee'?'<button class="btn-orange" onclick="terminerPrestation('+i+')" style="background:rgba(46,213,115,0.12);border-color:var(--green);color:var(--green);">✅ Terminer</button>':'')+
+        '</div>';
+      list.appendChild(card);
+    });
+    const t=calcTotalJour();
+    total.style.display='block';
+    document.getElementById('totalTemps').textContent=t.label;
+    document.getElementById('totalNb').textContent=nb;
+    document.getElementById('totalSub').textContent=APP.concierge+' — '+new Date().toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
+  }
+
+  function buildPhotosHtml(p) {
+    if(!p.photoDebutBase64&&!p.photoFinBase64) return '';
+    let html='<div class="prestation-photos">';
+    if(p.photoDebutBase64) html+='<img class="prestation-thumb" src="'+p.photoDebutBase64+'" alt="Début" onclick="openLightbox(\''+p.photoDebutBase64.replace(/'/g,'')+'\')">'; 
+    if(p.photoFinBase64) html+='<img class="prestation-thumb" src="'+p.photoFinBase64+'" alt="Fin" onclick="openLightbox(\''+p.photoFinBase64.replace(/'/g,'')+'\')">'; 
+    return html+'</div>';
+  }
+
+  function terminerPrestation(index) {
+    const p=APP.prestations[index];
+    const hFin=getCurrentTime();
+    p.heureFin=hFin; p.statut='terminee';
+    const d=calcDuree(p.heureDebut,hFin);
+    if(d){p.duree=d.label;p.dureeMin=d.totalMin;}
+    save(); renderPrestations(); showToast('✅ Prestation terminée — '+hFin);
+  }
+
+  function openEdit(index) {
+    const p=APP.prestations[index];
+    APP.form.editIndex=index;
+    document.getElementById('editIndex').value=index;
+    document.getElementById('editNature').value=p.nature;
+    document.getElementById('editHeureDebut').value=p.heureDebut||'';
+    document.getElementById('editHeureFin').value=p.heureFin||'';
+    populateResidenceSelects();
+    document.getElementById('editResidence').value=p.residence||'';
+    openModal('modalEdit');
+  }
+
+  function saveEdit() {
+    const i=parseInt(document.getElementById('editIndex').value);
+    const p=APP.prestations[i]; if(!p) return;
+    p.nature=document.getElementById('editNature').value.trim()||p.nature;
+    p.heureDebut=document.getElementById('editHeureDebut').value||p.heureDebut;
+    p.heureFin=document.getElementById('editHeureFin').value||'';
+    p.residence=document.getElementById('editResidence').value||p.residence;
+    if(p.heureFin){const d=calcDuree(p.heureDebut,p.heureFin);p.duree=d?d.label:'0min';p.dureeMin=d?d.totalMin:0;p.statut='terminee';}
+    else{p.duree='';p.dureeMin=0;p.statut='en-cours';}
+    save(); closeModal('modalEdit'); renderPrestations(); showToast('✅ Prestation modifiée');
+  }
+
+  function deletePrestation() {
+    const i=parseInt(document.getElementById('editIndex').value);
+    if(!confirm('Supprimer cette prestation ?')) return;
+    APP.prestations.splice(i,1); save(); closeModal('modalEdit'); renderPrestations(); showToast('🗑️ Supprimée','info');
+  }
+
+  // ===== LIGHTBOX =====
+  function openLightbox(src) { document.getElementById('lightboxImg').src=src; document.getElementById('lightbox').classList.add('active'); }
+  function closeLightbox() { document.getElementById('lightbox').classList.remove('active'); document.getElementById('lightboxImg').src=''; }
+
+  // ===== EXPORT TABLE =====
+  function renderExportTable() {
+    const tbody=document.getElementById('exportTableBody');
+    if(!APP.prestations.length){
+      tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px;">Aucune prestation enregistrée</td></tr>'; return;
+    }
+    tbody.innerHTML='';
+    APP.prestations.forEach(p=>{
+      const tr=document.createElement('tr');
+      const dateLabel=new Date(p.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});
+      tr.innerHTML='<td>'+dateLabel+'</td><td>'+(p.concierge||'—')+'</td><td>'+(p.residence||'—')+'</td>'+
+        '<td>'+(p.heureDebut||'—')+'</td><td>'+(p.heureFin||'—')+'</td>'+
+        '<td style="color:var(--gold);font-weight:700;">'+(p.duree||'—')+'</td><td>'+(p.nature||'—')+'</td>';
+      tbody.appendChild(tr);
+    });
+  }
+
+  // ===== EXPORT EXCEL =====
+  async function exportExcel() {
+    if(!APP.prestations.length){showToast('❌ Aucune prestation à exporter','err');return;}
+    showLoading('Génération Excel...');
+    try{
+      const wb=XLSX.utils.book_new();
+      const dateLabel=new Date(APP.dateJour||today()).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});
+      const headers=['Date','Intervenant','Bâtiment','Heure début','Heure fin','Temps presté','Nature des travaux'];
+      const rows=APP.prestations.map(p=>[dateLabel,p.concierge||'',p.residence||'',p.heureDebut||'',p.heureFin||'',p.duree||'',p.nature||'']);
+      const total=calcTotalJour();
+      const totalRow=['','','','','TOTAL',total.label,APP.prestations.length+' prestation(s)'];
+      const ws=XLSX.utils.aoa_to_sheet([headers,...rows,[],totalRow]);
+      ws['!cols']=[{wch:12},{wch:14},{wch:24},{wch:12},{wch:10},{wch:14},{wch:40}];
+      const categories={};
+      APP.prestations.forEach(p=>{const k=p.nature||'Autre';if(!categories[k])categories[k]={count:0,totalMin:0};categories[k].count++;categories[k].totalMin+=p.dureeMin||0;});
+      const wsRecap=XLSX.utils.aoa_to_sheet([['Nature des travaux','Nb interventions','Temps total'],...Object.entries(categories).map(([n,d])=>{const h=Math.floor(d.totalMin/60),m=d.totalMin%60;return[n,d.count,h>0?h+'h'+String(m).padStart(2,'0'):m+'min'];})]);
+      wsRecap['!cols']=[{wch:40},{wch:18},{wch:14}];
+      XLSX.utils.book_append_sheet(wb,ws,'Rapport journalier');
+      XLSX.utils.book_append_sheet(wb,wsRecap,'Récap par travaux');
+      const dateFile=(APP.dateJour||today()).replace(/-/g,'');
+      XLSX.writeFile(wb,'Rapport_'+(APP.concierge||'Concierge')+'_'+dateFile+'.xlsx');
+      hideLoading(); showToast('📥 Excel exporté','gold');
+    }catch(err){hideLoading();showToast('❌ Erreur export : '+err.message,'err');}
